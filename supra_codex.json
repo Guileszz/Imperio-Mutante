@@ -1,0 +1,201 @@
+{
+  "meta": {
+    "version": "3.2.0",
+    "protocol": "Néctar Supremo v2.0",
+    "last_updated": "2024-05-12T12:00:00Z",
+    "codename": "ORÁCULO",
+    "author": "Imperio-Mutante",
+    "project": "2.0 - Extração Recursiva Total",
+    "status": "OPERACIONAL",
+    "github": "https://github.com/guitriloco/Imperio-Mutante"
+  },
+  "nodes": {
+    "SPECTRUM": {
+      "id": "spectrum-node-01",
+      "name": "ESPECTRO",
+      "endpoint": "http://localhost:8001",
+      "capabilities": ["automation", "monitoring", "lightweight", "data_harvesting", "zenith_engine"],
+      "hardware": "RTX 3050 | 16GB RAM | 8 Core CPU",
+      "priority": 1,
+      "weight": 1.0,
+      "status": "unknown"
+    },
+    "NEURO-TOXIN": {
+      "id": "neurotoxin-node-01",
+      "name": "NEURO-TOXINA",
+      "endpoint": "http://localhost:8002",
+      "capabilities": ["neural_networks", "heavy_processing", "complex_analysis", "local_llm", "shadow_oracle"],
+      "hardware": "RTX 3070 | 64GB RAM | 32 Core Ryzen 9",
+      "priority": 2,
+      "weight": 2.0,
+      "status": "unknown"
+    },
+    "GLITCH": {
+      "id": "glitch-node-01",
+      "name": "GLITCH",
+      "endpoint": "http://localhost:8003",
+      "capabilities": ["edge_computing", "quick_tasks", "interface", "fallback"],
+      "hardware": "ROG Ally | 16GB RAM | Z1 Extreme",
+      "priority": 3,
+      "weight": 1.0,
+      "status": "unknown"
+    }
+  },
+  "services": {
+    "alquimia": {
+      "endpoint": "http://localhost:8001",
+      "enabled": true,
+      "workers": 4,
+      "redis_url": "redis://localhost:6379",
+      "features": ["distillation", "knowledge_store", "synthesis"],
+      "status": "OPERACIONAL"
+    },
+    "zenith": {
+      "enabled": true,
+      "recursive_depth": 3,
+      "max_urls": 50,
+      "high_relevance_keywords": [
+        "SOTA", "state-of-the-art", "leaderboard", "benchmark",
+        "model-release", "performance", "ranking", "evaluation"
+      ],
+      "source_weights": {
+        "lmsys.org": 2.5,
+        "huggingface.co": 2.0,
+        "arxiv.org": 1.8,
+        "openai.com": 1.5
+      },
+      "status": "OPERACIONAL"
+    },
+    "shadow_oracle": {
+      "enabled": true,
+      "stealth_mode": true,
+      "adaptive_delay": true,
+      "rate_limit_protection": true,
+      "market_feeds": [
+        "https://cointelegraph.com/rss",
+        "https://www.coindesk.com/arc/outboundfeeds/rss/",
+        "https://cryptopanic.com/news/"
+      ],
+      "tech_feeds": [
+        "https://lmsys.org/blog/",
+        "https://huggingface.co/blog",
+        "https://openai.com/news"
+      ],
+      "status": "OPERACIONAL"
+    },
+    "optimization_engine": {
+      "endpoint": "http://localhost:8004",
+      "enabled": true,
+      "interval_seconds": 3600,
+      "auto_mutate": true,
+      "gemini_analysis": true
+    },
+    "carrasco_guard": {
+      "enabled": true,
+      "monitoring_interval": 60,
+      "purge_threshold": 0.8,
+      "alert_channels": ["telegram", "log"],
+      "status": "OPERACIONAL"
+    },
+    "telemetry": {
+      "enabled": true,
+      "collection_interval": 30,
+      "metrics": ["cpu", "memory", "latency", "network", "disk"],
+      "status": "OPERACIONAL"
+    }
+  },
+  "settings": {
+    "latency_threshold": 2.5,
+    "health_check_interval": 30,
+    "circuit_breaker_threshold": 5,
+    "max_concurrent_tasks": 500,
+    "nectar_harvesting": {
+      "enabled": true,
+      "interval": 300,
+      "sources": [
+        "https://lmsys.org/blog/",
+        "https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard",
+        "https://huggingface.co/blog",
+        "https://openai.com/news"
+      ]
+    },
+    "optimization_flags": {
+      "use_simd": true,
+      "jit_compilation": "auto",
+      "low_latency_mode": true,
+      "aggressive_gc": true,
+      "zero_copy_io": true,
+      "multi_processing": true
+    },
+    "alquimia_settings": {
+      "distiller_workers": 4,
+      "max_content_length": 10000,
+      "store_ttl_days": 7
+    },
+    "proxies": [
+      "http://proxy1.example.com:8080",
+      "http://proxy2.example.com:8080"
+    ]
+  },
+  "commands": {
+    "EVOLUIR": {
+      "description": "Dispara ciclo de auto-otimização hiper-recursiva",
+      "requires": "optimization_engine",
+      "action": "telemetry -> analysis -> mutation -> validation"
+    },
+    "SINTETIZAR": {
+      "description": "Consolida Néctar colhido em blocos de conhecimento",
+      "requires": "alquimia",
+      "action": "collect -> distill -> synthesize -> store"
+    },
+    "HARVEST": {
+      "description": "Coleta Néctar de fontes configuradas",
+      "requires": "zenith",
+      "action": "discover -> extract -> rank -> store"
+    },
+    "INTELIGENCE": {
+      "description": "Coleta inteligência de mercado",
+      "requires": "shadow_oracle",
+      "action": "scrape -> correlate -> dispatch"
+    },
+    "PROTECT": {
+      "description": "Ativa modo de proteção máxima",
+      "requires": "carrasco_guard",
+      "action": "monitor -> detect -> alert -> purge"
+    }
+  },
+  "modules": {
+    "nexus_core": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "oracle_bot": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "mag_engine": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "zenith_automation": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "shadow_oracle": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "alquimia_processing": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "carrasco_guard": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    },
+    "telemetry": {
+      "version": "3.2.0",
+      "status": "OPERACIONAL"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+google-generativeai
+python-dotenv
+pydantic
+httpx
+websockets
+psutil
+aiofiles
+pynvml
+python-telegram-bot
+aiosqlite
+redis
+beautifulsoup4
+lxml
