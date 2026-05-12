@@ -1,10 +1,10 @@
 """
-SHADOW MARKET ORACLE v2.0 - Síntese de Oráculo com Stealth Avançado.
+SHADOW MARKET ORACLE v2.5 - Síntese de Oráculo com Stealth Layer v3.0.
 Evolução do ShadowCrawler com Correlação de Mercado, UA Dinâmicos e Evasão Adaptativa.
 
 ARQUITETURA:
 ├── ShadowOracle (Orquestrador de Intelligence)
-│   ├── StealthLayer (User-Agents dinâmicos + Evasão de rate-limit)
+│   ├── StealthLayer (Importada: Fingerprinting dinâmico + Jittering)
 │   ├── MarketCorrelator (Correlação notícias ↔ volatilidade)
 │   ├── NewsFeeder (RSS feeds de mercados e tecnologia)
 │   └── NeuroDispatcher (Despacho para NEURO-TOXIN)
@@ -22,18 +22,10 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 
+from stealth_layer import StealthLayer
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SHADOW-ORACLE - %(levelname)s - %(message)s')
 logger = logging.getLogger("SHADOW-ORACLE")
-
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0"
-]
 
 MARKET_FEEDS = [
     "https://cointelegraph.com/rss",
@@ -50,71 +42,6 @@ TECH_FEEDS = [
     "https://arxiv.org/cs",
     "https://deepmind.google/blog/rss.xml"
 ]
-
-
-class StealthLayer:
-    """
-    Camada de Stealth: User-Agents dinâmicos e evasão de rate-limit adaptativa.
-    Simula comportamento humano para evitar detecção.
-    """
-    
-    def __init__(self):
-        self.request_count = 0
-        self.last_reset = time.time()
-        self.blocked_domains = {}
-        self.adaptive_delay = True
-    
-    def get_headers(self) -> Dict[str, str]:
-        return {
-            "User-Agent": random.choice(USER_AGENTS),
-            "Accept": random.choice([
-                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "application/rss+xml,application/xml;q=0.9,*/*;q=0.8"
-            ]),
-            "Accept-Language": random.choice([
-                "en-US,en;q=0.9",
-                "en-US,en;q=0.9,es;q=0.8",
-                "en-GB,en;q=0.9,en-US;q=0.8"
-            ]),
-            "Accept-Encoding": "gzip, deflate, br",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Cache-Control": "max-age=0",
-            "Sec-Ch-Ua": f'"{random.choice(["Chromium", "Chrome", "Not=A?Brand"])}";v="{random.randint(119, 123)}", "Chromium";v="{random.randint(119, 123)}", "Google Chrome";v="{random.randint(119, 123)}"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": f'"{random.choice(["Windows", "macOS", "Linux"])}"'
-        }
-    
-    def get_delay(self, domain: str) -> float:
-        self.request_count += 1
-        
-        if time.time() - self.last_reset > 60:
-            self.request_count = 0
-            self.last_reset = time.time()
-        
-        base_delay = random.uniform(2.0, 6.0)
-        
-        if domain in self.blocked_domains:
-            block_time = self.blocked_domains[domain]
-            if time.time() - block_time < 300:
-                return random.uniform(30.0, 60.0)
-            else:
-                del self.blocked_domains[domain]
-        
-        if self.request_count > 20:
-            return base_delay * 2
-        
-        return base_delay
-    
-    def mark_blocked(self, domain: str):
-        self.blocked_domains[domain] = time.time()
-        logger.warning(f"Domínio marcado como bloqueado: {domain}")
 
 
 class MarketCorrelator:
@@ -189,7 +116,7 @@ class MarketCorrelator:
 class NewsFeeder:
     """
     Coletor de Feeds RSS com parsing inteligente.
-    Extrai títulos, descrições e datas dos feeds.
+    Extrai títulos, descrições e locais dos feeds.
     """
     
     def __init__(self, client: httpx.AsyncClient):
@@ -226,12 +153,13 @@ class NewsFeeder:
 
 class ShadowOracle:
     """
-    SHADOW MARKET ORACLE v2.0 - Síntese de Oráculo.
+    SHADOW MARKET ORACLE v2.5 - Síntese de Oráculo.
     Combina: StealthLayer + MarketCorrelator + NewsFeeder + NeuroDispatcher.
     """
     
-    def __init__(self, neuro_toxin_endpoint: str = "http://localhost:8002/process"):
+    def __init__(self, neuro_toxin_endpoint: str = "http://localhost:8002/process", alquimia_endpoint: str = "http://localhost:8001"):
         self.neuro_toxin_endpoint = neuro_toxin_endpoint
+        self.alquimia_endpoint = alquimia_endpoint
         self.client = httpx.AsyncClient(
             timeout=20.0,
             follow_redirects=True,
@@ -245,12 +173,40 @@ class ShadowOracle:
         self.market_targets = MARKET_FEEDS
         self.tech_targets = TECH_FEEDS
     
+    async def send_to_alquimia(self, items: List[Dict[str, Any]]):
+        """Envia o Néctar coletado para a Alquimia para destilação e armazenamento."""
+        try:
+            formatted_items = []
+            for item in items:
+                if isinstance(item, dict):
+                    formatted_items.append({
+                        "raw_text": f"{item.get('title', '')} - {item.get('description', '')}",
+                        "url": item.get("link", ""),
+                        "source": item.get("source", "shadow_oracle"),
+                        "nectar_score": item.get("sentiment", {}).get("score", 0.5) + 0.5 
+                    })
+
+            if not formatted_items:
+                return
+
+            resp = await self.client.post(
+                f"{self.alquimia_endpoint}/distill",
+                json={
+                    "items": formatted_items,
+                    "source": "shadow_market_oracle"
+                },
+                timeout=10.0
+            )
+            if resp.status_code == 200:
+                logger.info(f"Néctar enviado para Alquimia: {len(formatted_items)} itens.")
+        except Exception as e:
+            logger.warning(f"Falha ao enviar Néctar para Alquimia: {e}")
+
     async def scrape_target(self, url: str) -> Dict[str, Any]:
         domain = urlparse(url).netloc
         
-        delay = self.stealth.get_delay(domain)
-        await asyncio.sleep(delay)
-        
+        # Uso da nova StealthLayer
+        await self.stealth.apply_jitter(domain)
         headers = self.stealth.get_headers()
         
         try:
@@ -262,9 +218,12 @@ class ShadowOracle:
             
             response.raise_for_status()
             
-            if "rss" in url or response.headers.get("content-type", "").startswith("application/rss"):
-                items = self.feeder.fetch_feed_sync(response.text)
-                return {"url": url, "type": "rss", "items": items, "count": len(items)}
+            # Simple check for RSS content
+            if "rss" in url or "application/xml" in response.headers.get("content-type", ""):
+                 # Note: fetch_feed in NewsFeeder already does its own get request. 
+                 # This is a bit redundant but following existing pattern.
+                 items = await self.feeder.fetch_feed(url)
+                 return {"url": url, "type": "rss", "items": items, "count": len(items)}
             
             return {
                 "url": url,
@@ -328,6 +287,9 @@ class ShadowOracle:
             result = await self.run_market_cycle()
             
             logger.info(f"Ciclo concluído: {result['intel_collected']} itens coletados | Sentimento: {result['market_sentiment']['overall_sentiment']}")
+            
+            if result['intel_collected'] > 0:
+                await self.send_to_alquimia(self.correlator.news_buffer)
             
             if result['intel_collected'] > 5:
                 await self.dispatch_to_neuro_toxin(result)

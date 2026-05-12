@@ -1,22 +1,23 @@
 """
 NEXUS CORE v3.2.0 - O Cérebro Central do Império Mutante
-Fusão de Trindade 2.5, MagEngine, LMArenaBridge, Zenith, Shadow Oracle e Alquimia.
-Roteamento Adaptativo com Auto-Otimização Hiper-Recursiva.
+Protocolo Ghost e Dominância Proativa Ativados.
+Paralelização total (16 núcleos) e Offloading de Telemetria (RTX 3050).
 
 ARQUITETURA:
 ├── NEXUS CORE (Cérebro Central)
 │   ├── NodeManager (Gerenciamento de Nós com Telemetria Ativa)
-│   ├── TelemetrySystem (Monitoramento em Tempo Real)
+│   ├── TelemetrySystem (Monitoramento GPU/CPU - Offload SPECTRUM)
 │   ├── ZenithEngine (Extração Recursiva / LMArenaBridge)
 │   ├── ShadowOracle (Intelligence de Mercado)
 │   ├── AlquimiaProcessor (Destilação e Gestão de Conhecimento)
 │   ├── OptimizationLoop (Auto-Otimização)
-│   └── CommandExecutor (Comandos Soberanos)
+│   ├── SocialGhost (Engenharia Social Reversa)
+│   └── PredatorPricing (Arbitragem Estratégica)
 ├── Nós de Processamento
-│   ├── SPECTRUM (Eficiência/Linux/RTX 3050)
-│   ├── NEURO-TOXIN (Agressividade/Ryzen/RTX 3070)
+│   ├── SPECTRUM (Eficiência/Linux/RTX 3050 - Telemetry Host)
+│   ├── NEURO-TOXIN (Agressividade/Ryzen/RTX 3070 - 16 Núcleos)
 │   └── GLITCH (Resiliência/Fallback)
-└── Protocolo Néctar Supremo v2.0
+└── Protocolo Néctar Supremo v3.0
 """
 
 import os
@@ -32,12 +33,18 @@ from enum import Enum
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Response, Request
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import google.generativeai as genai
 import httpx
+
+# Módulos customizados
+from telemetry import TelemetrySystem as AdvancedTelemetry
+from social_ghost import SocialGhost
+from predator_pricing import PredatorPricing
 
 # =============================================================================
 # CONFIGURAÇÃO E INICIALIZAÇÃO
@@ -58,6 +65,9 @@ if GEMINI_API_KEY:
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 DB_PATH = "imperio_mutante.db"
+
+# Inicialização do Pool de Processos (16 núcleos Ryzen 9)
+executor = ProcessPoolExecutor(max_workers=16)
 
 # =============================================================================
 # PERSISTÊNCIA E NOTIFICAÇÕES
@@ -144,14 +154,6 @@ class PersistenceManager:
             )
             await db.commit()
 
-    async def save_optimization_log(self, cycle: int, metric: str, value: float, recommendation: str, applied: int):
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(
-                "INSERT INTO optimization_log (cycle, metric, value, recommendation, applied, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-                (cycle, metric, value, recommendation, applied, datetime.now().isoformat())
-            )
-            await db.commit()
-
 class TelegramNotifier:
     def __init__(self, token: str, default_chat_id: str):
         self.token = token
@@ -161,7 +163,6 @@ class TelegramNotifier:
     async def send_message(self, text: str, chat_id: str = None):
         target_chat = chat_id or self.default_chat_id
         if not self.token or not target_chat:
-            logger.warning("Telegram Notifier não configurado corretamente.")
             return
         
         try:
@@ -173,36 +174,6 @@ class TelegramNotifier:
                 })
         except Exception as e:
             logger.error(f"Erro ao enviar notificação Telegram: {e}")
-
-# =============================================================================
-# SISTEMA DE TELEMETRIA
-# =============================================================================
-
-class TelemetrySystem:
-    def __init__(self):
-        self.start_time = time.time()
-        self.cycle_count = 0
-
-    def get_system_stats(self) -> Dict[str, Any]:
-        return {
-            "cpu_percent": psutil.cpu_percent(interval=None),
-            "memory": {
-                "total": psutil.virtual_memory().total,
-                "available": psutil.virtual_memory().available,
-                "percent": psutil.virtual_memory().percent
-            },
-            "disk": {"percent": psutil.disk_usage('/').percent},
-            "uptime": time.time() - self.start_time,
-            "timestamp": time.time(),
-            "version": "3.2.0"
-        }
-
-    async def monitor_gemini_performance(self, latency: float, tokens: int = 0) -> Dict[str, Any]:
-        return {
-            "latency": latency,
-            "tokens_estimate": tokens,
-            "efficiency": tokens / latency if latency > 0 else 0
-        }
 
 # =============================================================================
 # MODELOS E ENUMS
@@ -245,10 +216,6 @@ class HarvestRequest(BaseModel):
 class DistillRequest(BaseModel):
     raw_data: List[Dict[str, Any]]
     source: str = "nexus_core"
-
-class SynthesizeRequest(BaseModel):
-    nectar_ids: Optional[List[str]] = None
-    raw_items: Optional[List[Dict[str, Any]]] = None
 
 @dataclass
 class NodeMetrics:
@@ -350,25 +317,11 @@ class NodeManager:
             if n.get("status") == "online": return n
         return self.nodes.get("GLITCH", {})
 
-    def get_all_telemetry(self) -> Dict[str, Any]:
-        return {
-            nid: {
-                "status": self.nodes[nid].get("status"),
-                "metrics": {
-                    "success_rate": self.metrics[nid].success_rate,
-                    "avg_latency": self.metrics[nid].total_latency / self.metrics[nid].successful_requests if self.metrics[nid].successful_requests > 0 else 0,
-                    "total_requests": self.metrics[nid].total_requests
-                }
-            } for nid in self.nodes
-        }
-
 # =============================================================================
-# ZENITH ENGINE INTEGRATION
+# BRIDGES
 # =============================================================================
 
 class ZenithBridge:
-    """Ponte entre NEXUS CORE e ZenithAutomation."""
-    
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
         self.base_sources = [
@@ -376,44 +329,17 @@ class ZenithBridge:
             "https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard",
             "https://huggingface.co/blog"
         ]
-    
-    async def harvest_nectar(self, sources: List[str] = None, recursive: bool = True) -> Dict[str, Any]:
-        """Coleta Néctar usando o módulo Zenith."""
-        try:
-            response = await self.client.post(
-                "http://localhost:8001/distill",
-                json={
-                    "items": [{"url": s, "type": "source"} for s in (sources or self.base_sources)],
-                    "source": "zenith_bridge"
-                },
-                timeout=30.0
-            )
-            return response.json()
-        except Exception as e:
-            logger.warning(f"Zenith Bridge não disponível: {e}")
-            return {"status": "fallback", "collected": 0}
-
-# =============================================================================
-# SHADOW ORACLE INTEGRATION
-# =============================================================================
 
 class ShadowBridge:
-    """Ponte entre NEXUS CORE e ShadowMarketOracle."""
-    
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
     
     async def get_market_intel(self) -> Dict[str, Any]:
-        """Coleta inteligência de mercado."""
         try:
-            response = await self.client.get(
-                "http://localhost:8005/market/sentiment",
-                timeout=10.0
-            )
+            response = await self.client.get("http://localhost:8005/market/sentiment", timeout=10.0)
             return response.json()
-        except Exception as e:
-            logger.warning(f"Shadow Bridge não disponível: {e}")
-            return {"status": "offline", "sentiment": "unknown"}
+        except:
+            return {"status": "offline"}
 
 # =============================================================================
 # ROTEAMENTO E COMANDOS
@@ -423,7 +349,7 @@ async def classify_with_gemini(content: Any) -> NodeType:
     if not GEMINI_API_KEY: return NodeType.GLITCH
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"[SISTEMA: NEXUS CORE v3.2.0] Classifique: SPECTRUM (automação), NEURO-TOXIN (heavy AI) ou GLITCH (edge/fallback). Conteúdo: {str(content)[:1000]}"
+        prompt = f"[SISTEMA: NEXUS CORE v3.2.0] Classifique: SPECTRUM (telemetria/automação), NEURO-TOXIN (heavy AI/16-cores) ou GLITCH (edge/fallback). Conteúdo: {str(content)[:1000]}"
         response = await asyncio.to_thread(model.generate_content, prompt)
         res = response.text.upper()
         if "NEURO" in res: return NodeType.NEURO_TOXIN
@@ -447,7 +373,6 @@ async def process_task(task_id: str, content: Any, priority: Optional[str]):
             
             if priority == "HIGH":
                 await notifier.send_message(f"✅ <b>Tarefa Concluída</b>\nID: {task_id[:8]}\nNó: {node['name']}")
-
     except Exception as e:
         tasks[task_id].update({"status": "failed", "error": str(e)})
         await persistence.save_task(task_id, "failed", error=str(e))
@@ -458,38 +383,34 @@ async def process_task(task_id: str, content: Any, priority: Optional[str]):
 
 tasks: Dict[str, Dict] = {}
 node_manager = NodeManager()
-telemetry = TelemetrySystem()
+telemetry = AdvancedTelemetry()
 persistence = PersistenceManager(DB_PATH)
 notifier = TelegramNotifier(TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+social_ghost = SocialGhost()
+predator_pricing = PredatorPricing()
 zenith_bridge = None
 shadow_bridge = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global zenith_bridge, shadow_bridge
-    
     async with httpx.AsyncClient() as client:
         app.state.client = client
-        app.state.engine = None
+        zenith_bridge = ZenithBridge(client)
+        shadow_bridge = ShadowBridge(client)
         
         try:
             from zenith_automation import ZenithEngine
             app.state.zenith = ZenithEngine()
-        except ImportError:
-            logger.warning("Zenith Automation não disponível.")
+        except:
             app.state.zenith = None
-        
-        zenith_bridge = ZenithBridge(client)
-        shadow_bridge = ShadowBridge(client)
-        
+            
         await node_manager.start_health_checks(client)
         await persistence.init_db()
-        
-        logger.info("🚀 NEXUS CORE v3.2.0 - Protocolo Néctar Supremo v2.0 ATIVADO")
+        logger.info("🚀 NEXUS CORE v3.2.0 - PROTOCOLO GHOST ATIVADO")
         yield
-        
-        if app.state.zenith:
-            await app.state.zenith.close()
+        if app.state.zenith: await app.state.zenith.close()
+        executor.shutdown()
         logger.info("NEXUS CORE encerrado.")
 
 app = FastAPI(title="NEXUS CORE v3.2.0 - Império Mutante", lifespan=lifespan)
@@ -504,9 +425,7 @@ async def ingress(request: IngressRequest, background_tasks: BackgroundTasks):
 
 @app.get("/status/{task_id}", response_model=TaskStatus)
 async def get_status(task_id: str):
-    if task_id in tasks:
-        return {**tasks[task_id], "task_id": task_id}
-    
+    if task_id in tasks: return {**tasks[task_id], "task_id": task_id}
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT * FROM tasks WHERE task_id = ?", (task_id,)) as cursor:
@@ -520,12 +439,79 @@ async def get_status(task_id: str):
                     "result": json.loads(d["result"]) if d["result"] else None,
                     "error": d["error"]
                 }
-    
     raise HTTPException(status_code=404)
 
-@app.get("/history")
-async def get_history(limit: int = 10):
-    return await persistence.get_recent_tasks(limit)
+@app.get("/health")
+async def health():
+    stats = telemetry.get_system_stats()
+    return {
+        "status": "operational",
+        "version": "3.2.0",
+        "nodes": node_manager.nodes,
+        "telemetry": stats
+    }
+
+@app.post("/command")
+async def command(request: CommandRequest):
+    cmd = request.command.upper()
+    
+    if cmd == "/GHOST":
+        wallet = request.args.get("wallet")
+        if not wallet: return {"error": "wallet required"}
+        result = await social_ghost.analyze_whale_footprint(wallet)
+        return {"status": "success", "result": result}
+        
+    if cmd == "/PREDATOR":
+        asset = request.args.get("asset", "ETH")
+        prices = request.args.get("prices", {"Binance": 2250, "Uniswap": 2260})
+        result = await predator_pricing.analyze_opportunity(asset, prices)
+        return {"status": "success", "result": result}
+
+    if cmd == "/SOBERANIA":
+        return {
+            "status": "success",
+            "system": telemetry.get_system_stats(),
+            "nodes": node_manager.nodes
+        }
+    
+    if cmd == "/MUTAR":
+        node_manager.load_config()
+        return {"status": "success", "message": "Supra-Codex mutado."}
+    
+    return {"status": "error", "message": "Comando desconhecido."}
+
+@app.post("/harvest")
+async def harvest(request: HarvestRequest):
+    if app.state.zenith:
+        try:
+            result = await app.state.zenith.harvest_nectar(request.sources or zenith_bridge.base_sources)
+            for nectar in result.get("top_nectar", []):
+                await persistence.save_nectar_harvest(
+                    url=nectar.get("url", ""),
+                    nectar_score=nectar.get("nectar_score", 0),
+                    content_hash=nectar.get("content_hash", ""),
+                    entities=nectar.get("entities", {})
+                )
+            return result
+        except Exception as e:
+            logger.error(f"Erro no harvesting: {e}")
+    return {"status": "fallback", "message": "Zenith não disponível."}
+
+@app.post("/distill")
+async def distill(request: DistillRequest):
+    try:
+        response = await app.state.client.post(
+            "http://localhost:8001/distill",
+            json={"items": request.raw_data, "source": request.source},
+            timeout=30.0
+        )
+        return response.json()
+    except:
+        return {"status": "fallback", "processed": len(request.raw_data)}
+
+@app.get("/market/intel")
+async def get_market_intel():
+    return await shadow_bridge.get_market_intel() if shadow_bridge else {"status": "offline"}
 
 @app.post("/oracle/notification")
 async def oracle_notification(request: Request):
@@ -533,7 +519,7 @@ async def oracle_notification(request: Request):
     message = data.get("message")
     if message:
         await notifier.send_message(message)
-        if data.get("type") == "MAG_EVENT" or data.get("type") == "ZENITH_EVENT":
+        if data.get("type") == "MAG_EVENT":
             await persistence.save_mag_event(
                 source=data.get("source", "unknown"),
                 event_type=data.get("event_type", "alert"),
@@ -542,165 +528,6 @@ async def oracle_notification(request: Request):
             )
         return {"status": "sent"}
     return {"status": "ignored"}
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "operational",
-        "version": "3.2.0",
-        "nodes": node_manager.nodes,
-        "telemetry": telemetry.get_system_stats()
-    }
-
-# =============================================================================
-# COMMAND ENDPOINTS
-# =============================================================================
-
-@app.post("/command")
-async def command(request: CommandRequest):
-    cmd = request.command.upper()
-    
-    if cmd == "/SOBERANIA":
-        return {
-            "status": "success",
-            "system": telemetry.get_system_stats(),
-            "nodes": node_manager.get_all_telemetry()
-        }
-    
-    if cmd == "/MUTAR":
-        node_manager.load_config()
-        return {"status": "success", "message": "Supra-Codex mutado."}
-    
-    if cmd == "/APOGEU":
-        node_manager.settings["low_latency_mode"] = True
-        node_manager.settings["max_concurrent_tasks"] = 1000
-        return {"status": "success", "message": "Modo APOGEU ativado. Performance máxima."}
-    
-    if cmd == "/CARRASCO":
-        purged = len(tasks)
-        tasks.clear()
-        return {"status": "success", "message": f"Ciclo CARRASCO executado. {purged} processos purgados."}
-    
-    if cmd == "/EVOLUIR":
-        try:
-            response = await app.state.client.post("http://localhost:8004/evolve", timeout=60.0)
-            if response.status_code == 200:
-                result = response.json()
-                telemetry.cycle_count += 1
-                return {
-                    "status": "success",
-                    "message": "Ciclo de evolução executado.",
-                    "result": result
-                }
-        except Exception as e:
-            logger.warning(f"Optimization Engine não disponível: {e}")
-        return {
-            "status": "partial",
-            "message": "Evolution Engine não conectado. Telemetria atualizada.",
-            "metrics": telemetry.get_system_stats()
-        }
-    
-    if cmd == "/SINTETIZAR":
-        raw_data = request.args.get("raw_items", [])
-        try:
-            response = await app.state.client.post(
-                "http://localhost:8001/synthesize",
-                json={"raw_items": raw_data},
-                timeout=30.0
-            )
-            if response.status_code == 200:
-                result = response.json()
-                await notifier.send_message(f"🍯 <b>Síntese de Néctar Concluída</b>\n{result.get('synthesis', '')[:500]}")
-                return result
-        except Exception as e:
-            logger.warning(f"Alquimia não disponível: {e}")
-        
-        return {
-            "status": "partial",
-            "message": "Alquimia não disponível. use /HARVEST primeiro."
-        }
-    
-    return {"status": "error", "message": "Comando desconhecido."}
-
-# =============================================================================
-# NÉCTAR HARVESTING ENDPOINTS
-# =============================================================================
-
-@app.post("/harvest")
-async def harvest(request: HarvestRequest):
-    """Endpoint para coleta de Néctar via Zenith."""
-    sources = request.sources or zenith_bridge.base_sources if zenith_bridge else []
-    
-    if app.state.zenith:
-        try:
-            result = await app.state.zenith.harvest_nectar(sources)
-            
-            for nectar in result.get("top_nectar", []):
-                await persistence.save_nectar_harvest(
-                    url=nectar.get("url", ""),
-                    nectar_score=nectar.get("nectar_score", 0),
-                    content_hash=nectar.get("content_hash", ""),
-                    entities=nectar.get("entities", {})
-                )
-            
-            await notifier.send_message(f"🍯 <b>Néctar Colhido</b>\nTotal: {result.get('total_collected', 0)}\nTop: {len(result.get('top_nectar', []))} fontes")
-            
-            return result
-        except Exception as e:
-            logger.error(f"Erro no harvesting: {e}")
-    
-    return {"status": "fallback", "message": "Zenith não disponível."}
-
-@app.post("/distill")
-async def distill(request: DistillRequest):
-    """Endpoint para destilação de dados via Alquimia."""
-    try:
-        response = await app.state.client.post(
-            "http://localhost:8001/distill",
-            json={"items": request.raw_data, "source": request.source},
-            timeout=30.0
-        )
-        return response.json()
-    except Exception as e:
-        logger.warning(f"Alquimia não disponível: {e}")
-        return {"status": "fallback", "processed": len(request.raw_data)}
-
-@app.get("/nectar/history")
-async def get_nectar_history(limit: int = 50):
-    """Retorna histórico de Néctar colhido."""
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT * FROM nectar_harvest ORDER BY timestamp DESC LIMIT ?", 
-            (limit,)
-        ) as cursor:
-            rows = await cursor.fetchall()
-            return {"history": [dict(row) for row in rows], "count": len(rows)}
-
-@app.get("/optimization/log")
-async def get_optimization_log(limit: int = 50):
-    """Retorna histórico de otimizações."""
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT * FROM optimization_log ORDER BY timestamp DESC LIMIT ?", 
-            (limit,)
-        ) as cursor:
-            rows = await cursor.fetchall()
-            return {"log": [dict(row) for row in rows], "count": len(rows)}
-
-# =============================================================================
-# MARKET INTEL ENDPOINT
-# =============================================================================
-
-@app.get("/market/intel")
-async def get_market_intel():
-    """Retorna inteligência de mercado do Shadow Oracle."""
-    return await shadow_bridge.get_market_intel() if shadow_bridge else {"status": "offline"}
-
-# =============================================================================
-# MAIN
-# =============================================================================
 
 if __name__ == "__main__":
     import uvicorn

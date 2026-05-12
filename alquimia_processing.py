@@ -278,6 +278,31 @@ class RedisKnowledgeStore:
     def _generate_id(self, content: str) -> str:
         return hashlib.sha256(content.encode()).hexdigest()[:16]
     
+    async def store_nectar(self, block: KnowledgeBlock) -> bool:
+        """Armazena Néctar especificamente no Redis com prefixo próprio."""
+        try:
+            if self.connected and self.redis_client:
+                key = f"nectar:{block.id}"
+                await self.redis_client.hset(key, mapping={
+                    "id": block.id,
+                    "content": block.content[:8000],
+                    "source": block.source,
+                    "entities": json.dumps(block.entities),
+                    "nectar_score": str(block.nectar_score),
+                    "timestamp": block.timestamp,
+                    "tags": json.dumps(block.tags)
+                })
+                # Néctar tem expiração de 30 dias por ser mais valioso
+                await self.redis_client.expire(key, 86400 * 30)
+                await self.redis_client.sadd("nectar:index", block.id)
+                return True
+            else:
+                self.fallback_store[f"nectar:{block.id}"] = block
+                return True
+        except Exception as e:
+            logger.error(f"Erro ao armazenar Néctar: {e}")
+            return False
+
     async def store(self, block: KnowledgeBlock) -> bool:
         try:
             if self.connected and self.redis_client:
@@ -419,8 +444,13 @@ class AlquimiaProcessor:
                 tags=[]
             )
             
-            if await self.knowledge_store.store(block):
-                stored_count += 1
+            # Se a fonte for de alta relevância, armazena como Néctar
+            if source in ["shadow_market_oracle", "zenith_automation", "shadow_oracle"]:
+                if await self.knowledge_store.store_nectar(block):
+                    stored_count += 1
+            else:
+                if await self.knowledge_store.store(block):
+                    stored_count += 1
         
         logger.info(f"Conhecimento destilado e armazenado: {stored_count}/{len(raw_data)} blocos.")
         
@@ -542,6 +572,26 @@ async def store_knowledge(request: StoreRequest):
     if success:
         return {"status": "stored", "id": block.id}
     raise HTTPException(status_code=500, detail="Falha ao armazenar conhecimento")
+
+
+@app.post("/nectar/store")
+async def store_nectar(request: StoreRequest):
+    """Armazena um bloco de Néctar diretamente."""
+    block = KnowledgeBlock(
+        id=hashlib.sha256(request.content.encode()).hexdigest()[:16],
+        content=request.content[:8000],
+        source=request.source,
+        entities={},
+        nectar_score=2.0, # Néctar tem score base superior
+        timestamp=datetime.now().isoformat(),
+        tags=request.tags + ["NECTAR"]
+    )
+    
+    success = await processor.knowledge_store.store_nectar(block)
+    
+    if success:
+        return {"status": "nectar_stored", "id": block.id}
+    raise HTTPException(status_code=500, detail="Falha ao armazenar Néctar")
 
 
 @app.get("/knowledge/search")

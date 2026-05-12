@@ -230,12 +230,13 @@ class ZenithEngine:
     Combina: RecursiveExtractor + URLDiscovery + SourceRanker + LMArenaBridge.
     """
     
-    def __init__(self):
+    def __init__(self, alquimia_endpoint: str = "http://localhost:8001"):
         self.client = httpx.AsyncClient(
             timeout=30.0,
             follow_redirects=True,
             limits=httpx.Limits(max_connections=50, max_keepalive_connections=20)
         )
+        self.alquimia_endpoint = alquimia_endpoint
         self.extractor = RecursiveExtractor(self.client)
         self.discovery = URLDiscovery(self.client)
         self.ranker = SourceRanker()
@@ -247,6 +248,38 @@ class ZenithEngine:
             "https://arxiv.org/cs"
         ]
     
+    async def send_to_alquimia(self, nectar_data: List[Dict[str, Any]]):
+        """Envia o Néctar colhido para a Alquimia para destilação e cache Redis."""
+        try:
+            formatted_items = []
+            for item in nectar_data:
+                formatted_items.append({
+                    "raw_text": item.get("content", ""),
+                    "url": item.get("url", ""),
+                    "source": "zenith_automation",
+                    "nectar_score": item.get("nectar_score", 1.0),
+                    "metadata": {
+                        "title": item.get("title", ""),
+                        "depth": item.get("depth", 0),
+                        "category": item.get("category", "extraction")
+                    }
+                })
+            
+            if not formatted_items:
+                return
+
+            await self.client.post(
+                f"{self.alquimia_endpoint}/distill",
+                json={
+                    "items": formatted_items,
+                    "source": "zenith_automation"
+                },
+                timeout=15.0
+            )
+            logger.info(f"Zenith alimentou Alquimia com {len(formatted_items)} itens.")
+        except Exception as e:
+            logger.warning(f"Falha ao enviar dados do Zenith para Alquimia: {e}")
+
     async def harvest_nectar(self, sources: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Coleta principal de Néctar usando todos os módulos.
@@ -277,6 +310,10 @@ class ZenithEngine:
         
         ranked_nectar = self.ranker.rank(all_nectar)
         top_nectar = self.ranker.get_top_sources(ranked_nectar, top_n=10)
+        
+        # Alimenta Alquimia instantaneamente
+        if ranked_nectar:
+            await self.send_to_alquimia(ranked_nectar)
         
         return {
             "total_collected": len(all_nectar),

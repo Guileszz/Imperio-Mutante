@@ -6,6 +6,16 @@
     "codename": "ORÁCULO",
     "author": "Imperio-Mutante",
     "project": "2.0 - Extração Recursiva Total",
+    "protocol_12": {
+      "status": "ATIVADO",
+      "codename": "SÍNTESE_DE_PODER",
+      "description": "Consolidação de infraestrutura, macros de disparo rápido e integração profunda com Redis.",
+      "entities_triads": {
+        "CORE": [15, 1, 5],
+        "MOTOR": [14, 2, 12],
+        "SOVEREIGNTY": [4, 13, 7]
+      }
+    },
     "status": "OPERACIONAL",
     "github": "https://github.com/guitriloco/Imperio-Mutante"
   },
